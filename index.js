@@ -1,8 +1,14 @@
 const express = require("express")
 const { PrismaClient } = require("@prisma/client")
-
+const { google } = require("googleapis")
 const app = express()
 const client = new PrismaClient()
+
+const oAuth2Client = new google.auth.OAuth2(
+  process.env.CLIENT_ID, 
+  process.env.SECRET_ID, 
+  process.env.REDIRECT
+);
 
 app.get("/", async(req, res)=>{
     const user = await client.user.findFirst({
@@ -29,10 +35,10 @@ app.post("/webhook", async (req, res) => {
       }
     })
   
-    if (resourceState === "exists") {
+    if (resourceState === "sync") {
       try {
         const calendar = google.calendar("v3");
-        const oAuth2Client = new google.auth.OAuth2();
+        // const oAuth2Client = new google.auth.OAuth2();
         oAuth2Client.setCredentials({
           access_token: user?.accessToken,
           refresh_token: user?.refreshToken,
