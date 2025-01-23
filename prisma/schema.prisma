@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Logs {
+  id        Int      @id @default(autoincrement())
+  meetingId Int
+  action    String
+  timeStamp DateTime
+  details   String
+  done      Boolean
+  Meetings  Meetings @relation(fields: [meetingId], references: [id])
+}
+
+model Meetings {
+  id          Int      @id @default(autoincrement())
+  roomId      Int
+  userId      Int
+  meetingId   String   @unique
+  title       String
+  startTime   DateTime
+  endTime     DateTime
+  status      String
+  meetingLink String
+  Logs        Logs[]
+  Room        Room     @relation(fields: [roomId], references: [id])
+  User        User     @relation(fields: [userId], references: [id])
+}
+
+model Room {
+  id            Int        @id @default(autoincrement())
+  userId        Int
+  roomName      String
+  capacity      Int
+  resourceEmail String
+  Meetings      Meetings[]
+  User          User       @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  accessToken  String
+  refreshToken String
+  expiryDate   String
+  Meetings     Meetings[]
+  Room         Room[]
+}
