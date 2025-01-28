@@ -4,11 +4,32 @@ const { google } = require("googleapis")
 const app = express()
 const client = new PrismaClient()
 
-const oAuth2Client = new google.auth.OAuth2(
-  process.env.CLIENT_ID, 
-  process.env.SECRET_ID, 
-  process.env.REDIRECT
-);
+// const oAuth2Client = new google.auth.OAuth2(
+//   process.env.CLIENT_ID, 
+//   process.env.SECRET_ID, 
+//   process.env.REDIRECT
+// );
+
+const getOAuth2Client = async (email) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.CLIENT_ID, 
+    process.env.SECRET_ID, 
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: user?.refreshToken,
+    access_token: user?.accessToken,
+    expiry_date: Number(user?.expiryDate),
+  });
+
+  return oauth2Client;
+};
 
 app.get("/", async(req, res)=>{
     const user = await client.user.findFirst({
