@@ -121,6 +121,26 @@ app.get("/", async(req, res)=>{
 
           console.log(`Events for room ${room.roomName}:`, events.data.items);
 
+          for (const event of events.data.items) {
+            const meetingData = {
+              meetingId: event.id, // Google Calendar event ID
+              title: event.summary, // Event title
+              startTime: new Date(event.start.dateTime || event.start.date), // Event start time
+              endTime: new Date(event.end.dateTime || event.end.date), // Event end time
+              status: event.status || "confirmed", // Event status
+              meetingLink: event.hangoutLink || "", // Google Meet link (if available)
+              roomId: room.id, // Associate with the room
+              userId: user.id, // Associate with the user
+            };
+
+            await client.meetings.upsert({
+              where: { meetingId: event.id },
+              update: meetingData,
+              create: meetingData,
+            });
+
+            console.log(`Meeting synced for room ${room.roomName}:`, event.summary);
+          }
         } catch (error) {
           console.log(error)
         }
@@ -131,22 +151,22 @@ app.get("/", async(req, res)=>{
         // console.log("Data",event.data)
         console.log("Token",verificationToken)
   
-        // const meetingData = {
-        //   meetingId: event.data.id, // Google Calendar event ID
-        //   title: event.data.summary, // Event title
-        //   startTime: new Date(event.data.start.dateTime), // Event start time
-        //   endTime: new Date(event.data.end.dateTime ), // Event end time
-        //   status: event.data.status || 'confirmed', // Event status
-        //   meetingLink: event.data.hangoutLink || '', // Google Meet link (if available)
-        //   roomId: 1, // Replace with dynamic room ID (e.g., based on event location or description)
-        //   userId: user?.id, // Associate with the user
-        // };
+        const meetingData = {
+          meetingId: event.data.id, // Google Calendar event ID
+          title: event.data.summary, // Event title
+          startTime: new Date(event.data.start.dateTime), // Event start time
+          endTime: new Date(event.data.end.dateTime ), // Event end time
+          status: event.data.status || 'confirmed', // Event status
+          meetingLink: event.data.hangoutLink || '', // Google Meet link (if available)
+          roomId: 1, // Replace with dynamic room ID (e.g., based on event location or description)
+          userId: user?.id, // Associate with the user
+        };
   
-        // await client.meetings.upsert({
-        //   where: { meetingId: String(event.data.id) },
-        //   update: meetingData,
-        //   create: meetingData,
-        // });
+        await client.meetings.upsert({
+          where: { meetingId: String(event.data.id) },
+          update: meetingData,
+          create: meetingData,
+        });
     }
   
     res.status(200).end(); // Acknowledge receipt
