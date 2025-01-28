@@ -11,7 +11,7 @@ const client = new PrismaClient()
 // );
 
 const getOAuth2Client = async (email) => {
-  const user = await prisma.user.findUnique({
+  const user = await client.user.findUnique({
     where: { email },
   });
 
@@ -25,7 +25,7 @@ const getOAuth2Client = async (email) => {
   oauth2Client.setCredentials({
     refresh_token: user?.refreshToken,
     access_token: user?.accessToken,
-    expiry_date: Number(user?.expiryDate),
+    expiry_date: user?.expiryDate,
   });
 
   return oauth2Client;
