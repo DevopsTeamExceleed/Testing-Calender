@@ -105,7 +105,7 @@ app.get("/", async(req, res)=>{
         where: {
           resourceId: resourceId
         }, select: {
-          room: true
+          Room: true
         }
       })
 
@@ -114,25 +114,26 @@ app.get("/", async(req, res)=>{
         try {
           // Fetch events for the room's calendar
           const events = await calendar.events.list({
-            calendarId: roomMail.room.resourceEmail, // Use the room's calendar ID
+            calendarId: roomMail.Room.resourceEmail, // Use the room's calendar ID
             timeMin: new Date().toISOString(), // Fetch events starting from now
             maxResults: 10, // Limit the number of results
             singleEvents: true,
             orderBy: "startTime",
           });
 
-          console.log(`Events for room ${room.roomName}:`, events.data.items);
+          console.log(`Events for room ${roomMail.Room.roomName}:`, events.data.items);
 
           for (const event of events.data.items) {
             const meetingData = {
               meetingId: event.id, // Google Calendar event ID
               title: event.summary, // Event title
+              description: event.description,
               startTime: new Date(event.start.dateTime || event.start.date), // Event start time
               endTime: new Date(event.end.dateTime || event.end.date), // Event end time
               status: event.status || "confirmed", // Event status
               meetingLink: event.hangoutLink || "", // Google Meet link (if available)
-              roomId: room.id, // Associate with the room
-              userId: user.id, // Associate with the user
+              roomMail: room.resourceEmail, // Associate with the room
+              userEmail: user.email, // Associate with the user
             };
 
             await client.meetings.upsert({
@@ -141,7 +142,7 @@ app.get("/", async(req, res)=>{
               create: meetingData,
             });
 
-            console.log(`Meeting synced for room ${room.roomName}:`, event.summary);
+            console.log(`Meeting synced for room ${roomMail.Room.roomName}:`, event.summary);
           }
         } catch (error) {
           console.log(error)
