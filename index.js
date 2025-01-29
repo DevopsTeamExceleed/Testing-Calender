@@ -132,7 +132,7 @@ app.get("/", async(req, res)=>{
               endTime: new Date(event.end.dateTime || event.end.date), // Event end time
               status: event.status || "confirmed", // Event status
               meetingLink: event.hangoutLink || "", // Google Meet link (if available)
-              roomMail: room.resourceEmail, // Associate with the room
+              roomMail: roomMail.Room.resourceEmail, // Associate with the room
               userEmail: user.email, // Associate with the user
             };
 
