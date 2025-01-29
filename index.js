@@ -104,6 +104,8 @@ app.get("/", async(req, res)=>{
       const roomMail = await client.watch.findFirst({
         where: {
           resourceId: resourceId
+        }, select: {
+          room: true
         }
       })
 
@@ -112,7 +114,7 @@ app.get("/", async(req, res)=>{
         try {
           // Fetch events for the room's calendar
           const events = await calendar.events.list({
-            calendarId: roomMail.chanelId, // Use the room's calendar ID
+            calendarId: roomMail.room.resourceEmail, // Use the room's calendar ID
             timeMin: new Date().toISOString(), // Fetch events starting from now
             maxResults: 10, // Limit the number of results
             singleEvents: true,
