@@ -127,7 +127,7 @@ app.get("/", async(req, res)=>{
             const meetingData = {
               meetingId: event.id, // Google Calendar event ID
               title: event.summary, // Event title
-              description: event.description,
+              description: event.description || "",
               startTime: new Date(event.start.dateTime || event.start.date), // Event start time
               endTime: new Date(event.end.dateTime || event.end.date), // Event end time
               status: event.status || "confirmed", // Event status
