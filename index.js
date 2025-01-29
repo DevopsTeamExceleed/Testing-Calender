@@ -123,27 +123,57 @@ app.get("/", async(req, res)=>{
 
           console.log(`Events for room ${roomMail.Room.roomName}:`, events.data.items);
 
-          for (const event of events.data.items) {
-            const meetingData = {
-              meetingId: event.id, // Google Calendar event ID
-              title: event.summary, // Event title
-              description: event.description || "",
-              startTime: new Date(event.start.dateTime || event.start.date), // Event start time
-              endTime: new Date(event.end.dateTime || event.end.date), // Event end time
-              status: event.status || "confirmed", // Event status
-              meetingLink: event.hangoutLink || "", // Google Meet link (if available)
-              roomMail: roomMail.Room.resourceEmail, // Associate with the room
-              userEmail: user.email, // Associate with the user
-            };
+          // for (const event of events.data.items) {
+          //   const meetingData = {
+          //     meetingId: event.id, // Google Calendar event ID
+          //     title: event.summary, // Event title
+          //     description: event.description || "",
+          //     startTime: new Date(event.start.dateTime || event.start.date), // Event start time
+          //     endTime: new Date(event.end.dateTime || event.end.date), // Event end time
+          //     status: event.status || "confirmed", // Event status
+          //     meetingLink: event.hangoutLink || "", // Google Meet link (if available)
+          //     roomMail: roomMail.Room.resourceEmail, // Associate with the room
+          //     userEmail: user.email, // Associate with the user
+          //   };
 
-            await client.meetings.upsert({
-              where: { meetingId: event.id },
-              update: meetingData,
-              create: meetingData,
-            });
+          //   await client.meetings.upsert({
+          //     where: { meetingId: event.id },
+          //     update: meetingData,
+          //     create: meetingData,
+          //   });
 
-            console.log(`Meeting synced for room ${roomMail.Room.roomName}:`, event.summary);
-          }
+          //   console.log(`Meeting synced for room ${roomMail.Room.roomName}:`, event.summary);
+          // }
+
+          await client.$transaction(
+            events.data.items.map(event =>
+                client.meetings.upsert({
+                    where: { meetingId: event.id },
+                    update: {
+                        title: event.summary || "No Title",
+                        description: event.description || "No desc",
+                        startTime: new Date(event.start.dateTime || event.start.date),
+                        endTime: new Date(event.end.dateTime || event.end.date),
+                        status: event.status || "confirmed",
+                        meetingLink: event.hangoutLink || "No Link",
+                        roomMail: roomMail.Room.resourceEmail,
+                        userEmail: user.email,
+                    },
+                    create: {
+                        meetingId: event.id,
+                        title: event.summary || "No Title",
+                        description: event.description || "No desc",
+                        startTime: new Date(event.start.dateTime || event.start.date),
+                        endTime: new Date(event.end.dateTime || event.end.date),
+                        status: event.status || "confirmed",
+                        meetingLink: event.hangoutLink || "No Link",
+                        roomMail: roomMail.Room.resourceEmail,
+                        userEmail: user.email,
+                    },
+                })
+            )
+        );
+
         } catch (error) {
           console.log(error)
         }
