@@ -157,8 +157,8 @@ app.get("/", async(req, res)=>{
             if(!meetings){
               await client.meetings.create({
                 data: {
-                  userEmail: item.userEmail,
-                  roomMail: item.resourceEmail,
+                  userEmail: roomMail.Room.userEmail,
+                  roomMail: roomMail.Room.resourceEmail,
                   meetingId: meeting.id,
                   startTime: meeting.start.dateTime,
                   title: meeting.summary || "(no title)",
@@ -173,8 +173,8 @@ app.get("/", async(req, res)=>{
                 where: {
                   meetingId: meeting.id
                 }, data: {             
-                    userEmail: item.userEmail,
-                    roomMail: item.resourceEmail,
+                    userEmail: roomMail.Room.userEmail,
+                    roomMail: roomMail.Room.resourceEmail,
                     meetingId: meeting.id,
                     startTime: meeting.start.dateTime,
                     title: meeting.summary || "(no title)",
