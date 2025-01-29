@@ -85,9 +85,10 @@ app.get("/", async(req, res)=>{
     const channelId = req.header("X-Goog-Channel-ID");
     const resourceId = req.header("X-Goog-Resource-ID");
     const resourceState = req.header("X-Goog-Resource-State");
+    const messageNumber = req.header("X-Goog-Message-Number");
     const verificationToken = req.headers['x-goog-channel-token']
   
-    console.log("Notification received:", { channelId, resourceId, resourceState });
+    console.log(`Webhook received! ResourceID=${resourceId}, ChannelID=${channelId}, MessageNumber=${messageNumber}, State=${resourceState}`);
 
     if(resourceState === "sync"){
       console.log("Channel is active")
@@ -145,34 +146,47 @@ app.get("/", async(req, res)=>{
           //   console.log(`Meeting synced for room ${roomMail.Room.roomName}:`, event.summary);
           // }
 
-          await client.$transaction(
-            events.data.items.map(event =>
-                client.meetings.upsert({
-                    where: { meetingId: event.id },
-                    update: {
-                        title: event.summary || "No Title",
-                        description: event.description || "No desc",
-                        startTime: new Date(event.start.dateTime || event.start.date),
-                        endTime: new Date(event.end.dateTime || event.end.date),
-                        status: event.status || "confirmed",
-                        meetingLink: event.hangoutLink || "No Link",
-                        roomMail: roomMail.Room.resourceEmail,
-                        userEmail: user.email,
-                    },
-                    create: {
-                        meetingId: event.id,
-                        title: event.summary || "No Title",
-                        description: event.description || "No desc",
-                        startTime: new Date(event.start.dateTime || event.start.date),
-                        endTime: new Date(event.end.dateTime || event.end.date),
-                        status: event.status || "confirmed",
-                        meetingLink: event.hangoutLink || "No Link",
-                        roomMail: roomMail.Room.resourceEmail,
-                        userEmail: user.email,
-                    },
-                })
-            )
-        );
+          events.data.items.map(async(meeting)=>{
+            const meetings = await client.meetings.findFirst({
+              where: {
+                meetingId: meeting.id
+              }
+            })
+    
+            console.log(meeting.start.dateTime)
+            if(!meetings){
+              await client.meetings.create({
+                data: {
+                  userEmail: item.userEmail,
+                  roomMail: item.resourceEmail,
+                  meetingId: meeting.id,
+                  startTime: meeting.start.dateTime,
+                  title: meeting.summary || "(no title)",
+                  description: meeting.description || "(no description)",
+                  endTime: meeting.end.dateTime,
+                  status: "false",
+                  meetingLink: meeting.hangoutLink || "No meeting link"
+                }
+              })
+            }else{
+              await client.meetings.update({
+                where: {
+                  meetingId: meeting.id
+                }, data: {             
+                    userEmail: item.userEmail,
+                    roomMail: item.resourceEmail,
+                    meetingId: meeting.id,
+                    startTime: meeting.start.dateTime,
+                    title: meeting.summary || "(no title)",
+                    description: meeting.description || "(no description)",
+                    endTime: meeting.end.dateTime,
+                    status: "false",
+                    meetingLink: meeting.hangoutLink || "No meeting link"              
+                }
+              })
+            }
+    
+          })
 
         } catch (error) {
           console.log(error)
