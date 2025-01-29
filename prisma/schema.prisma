@@ -19,27 +19,30 @@ model Logs {
 
 model Meetings {
   id          Int      @id @default(autoincrement())
-  roomId      Int
-  userId      Int
+  roomMail    String
+  userEmail   String
   meetingId   String   @unique
   title       String
+  description String
   startTime   DateTime
   endTime     DateTime
   status      String
   meetingLink String
   Logs        Logs[]
-  Room        Room     @relation(fields: [roomId], references: [id])
-  User        User     @relation(fields: [userId], references: [id])
+  Room        Room     @relation(fields: [roomMail], references: [resourceEmail])
+  User        User     @relation(fields: [userEmail], references: [email])
 }
 
 model Room {
   id            Int        @id @default(autoincrement())
-  userId        Int
+  userEmail     String
   roomName      String
+  resourceId    BigInt     @unique
   capacity      Int
-  resourceEmail String
+  resourceEmail String     @unique
   Meetings      Meetings[]
-  User          User       @relation(fields: [userId], references: [id])
+  User          User       @relation(fields: [userEmail], references: [email])
+  Watch         Watch[]
 }
 
 model User {
@@ -50,4 +53,11 @@ model User {
   expiryDate   String
   Meetings     Meetings[]
   Room         Room[]
+}
+
+model Watch {
+  id         Int    @id @default(autoincrement())
+  resourceId String @unique
+  chanelId   String
+  Room       Room   @relation(fields: [chanelId], references: [resourceEmail])
 }
