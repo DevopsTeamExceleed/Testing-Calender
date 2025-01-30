@@ -77,6 +77,28 @@ app.get("/", async(req, res)=>{
 //         console.error("Error fetching updated events:", err);
 //       }
 //     }
+
+        // for (const event of events.data.items) {
+          //   const meetingData = {
+          //     meetingId: event.id, // Google Calendar event ID
+          //     title: event.summary, // Event title
+          //     description: event.description || "",
+          //     startTime: new Date(event.start.dateTime || event.start.date), // Event start time
+          //     endTime: new Date(event.end.dateTime || event.end.date), // Event end time
+          //     status: event.status || "confirmed", // Event status
+          //     meetingLink: event.hangoutLink || "", // Google Meet link (if available)
+          //     roomMail: roomMail.Room.resourceEmail, // Associate with the room
+          //     userEmail: user.email, // Associate with the user
+          //   };
+
+          //   await client.meetings.upsert({
+          //     where: { meetingId: event.id },
+          //     update: meetingData,
+          //     create: meetingData,
+          //   });
+
+          //   console.log(`Meeting synced for room ${roomMail.Room.roomName}:`, event.summary);
+          // }
   
 //     res.status(200).end(); // Acknowledge receipt
 //   });
@@ -88,7 +110,7 @@ app.get("/", async(req, res)=>{
     const messageNumber = req.header("X-Goog-Message-Number");
     const verificationToken = req.headers['x-goog-channel-token']
   
-    console.log(`Webhook received! ResourceID=${resourceId}, ChannelID=${channelId}, MessageNumber=${messageNumber}, State=${resourceState}`);
+    console.log("Notification received:", { channelId, resourceId, resourceState, messageNumber });
 
     if(resourceState === "sync"){
       console.log("Channel is active")
@@ -124,27 +146,25 @@ app.get("/", async(req, res)=>{
 
           console.log(`Events for room ${roomMail.Room.roomName}:`, events.data.items);
 
-          // for (const event of events.data.items) {
-          //   const meetingData = {
-          //     meetingId: event.id, // Google Calendar event ID
-          //     title: event.summary, // Event title
-          //     description: event.description || "",
-          //     startTime: new Date(event.start.dateTime || event.start.date), // Event start time
-          //     endTime: new Date(event.end.dateTime || event.end.date), // Event end time
-          //     status: event.status || "confirmed", // Event status
-          //     meetingLink: event.hangoutLink || "", // Google Meet link (if available)
-          //     roomMail: roomMail.Room.resourceEmail, // Associate with the room
-          //     userEmail: user.email, // Associate with the user
-          //   };
+          const dbEvents = await client.meetings.findMany({
+            where: {
+              roomMail: roomMail.Room.resourceEmail
+            }
+          })
 
-          //   await client.meetings.upsert({
-          //     where: { meetingId: event.id },
-          //     update: meetingData,
-          //     create: meetingData,
-          //   });
+          const calendarIds = new Set(events.data.items.map(event => event.id))
 
-          //   console.log(`Meeting synced for room ${roomMail.Room.roomName}:`, event.summary);
-          // }
+          for(const dbEvent of dbEvents){
+            if(!calendarIds.has(dbEvent.meetingId)){
+              await client.meetings.delete({
+                where: {
+                  meetingId: dbEvent.meetingId
+                }
+              })
+              console.log(`Deleted event ${dbEvent.meetingId} from the database.`);
+            }
+          }
+
 
           events.data.items.map(async(meeting)=>{
             const meetings = await client.meetings.findFirst({
@@ -201,5 +221,5 @@ app.get("/", async(req, res)=>{
   });
 
 app.listen(8000, ()=>{
-    console.log("Server started at port 8000")
+  console.log("Server started at port 8000")
 })
